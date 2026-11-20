@@ -12,6 +12,10 @@ exports.addComment = async (req, res, next) => {
       userId,
       comment
     });
+    // الحصول على مثيل Socket.IO من التطبيق
+    const io = req.app.get('io');
+    // إرسال التعليق الجديد إلى جميع العملاء في الغرفة الخاصة بالصورة
+    io.to(`photo-${req.params.id}`).emit('newComment', populatedComment);
 
     // بنرجع التعليق مع بيانات صاحب التعليق عشان نعرضه 
     const populatedComment = await Comment.findById(newComment._id).populate('userId', 'firstName');

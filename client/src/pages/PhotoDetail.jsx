@@ -3,6 +3,8 @@
 import { useState, useEffect, useContext } from 'react';
 // استيراد useParams للحصول على معرّف الصورة من الرابط، وLink للتنقل بين الصفحات، وuseNavigate لإعادة التوجيه بعد الحذف
 import { useParams, Link, useNavigate } from 'react-router-dom';
+// استيراد io من مكتبة socket.io-client لإنشاء اتصال WebSocket
+import {io} from 'socket.io-client';
 // استيراد axios لإجراء طلبات HTTP
 import axios from 'axios';
 // استيراد AuthContext للوصول إلى بيانات المستخدم
@@ -21,6 +23,24 @@ export default function PhotoDetail() {
     axios.get(`/api/photos/${id}`).then(res => setPhoto(res.data)).catch(console.error);
     axios.get(`/api/photos/${id}/comments`).then(res => setComments(res.data)).catch(console.error);
   }, [id]);
+
+// عند تحميل المكون، نقوم بإنشاء اتصال Socket.IO والانضمام إلى غرفة التعليقات الخاصة بالصورة
+useEffect(() => {
+  const socket = io('http://localhost:5000');
+  socket.emit('joinPhoto', id);
+
+  socket.on('newComment', (comment) => {
+    setComments(prev =>
+      prev.some(c => c._id === comment._id) ? prev : [comment, ...prev]
+    );
+  });
+
+  return () => {
+    socket.emit('leavePhoto', id);
+    socket.disconnect();
+  };
+}, [id]);  
+
 // دالة لمعالجة إرسال التعليق الجديد، تقوم بإرسال التعليق إلى الخادم وتحديث قائمة التعليقات عند النجاح
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +52,6 @@ export default function PhotoDetail() {
         { headers: { 'x-user-id': user._id } }
       );
       // تحديث قائمة التعليقات بإضافة التعليق الجديد في البداية
-      setComments([res.data, ...comments]); 
       setNewComment(''); 
       // إعادة جلب التعليقات من الخادم للتأكد من التحديث
     } catch (err) {

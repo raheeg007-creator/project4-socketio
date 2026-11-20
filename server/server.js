@@ -27,9 +27,15 @@ app.set('io',io);
 
 // إعداد Socket.IO للتعامل مع الأحداث
 io.on('connection', (socket) => {
-socket.on('joinPhotoRoom', (photoId) => socket.join(`photo-${photoId}`));
-socket.on('leavePhotoRoom', (photoId) => socket.leave(`photo-${photoId}`));
-
+socket.on('joinPhotoRoom', (photoId) => {
+  console.log('joined room:photo-'+photoId);
+  socket.join(`photo-${photoId}`);
+});
+// عند مغادرة العميل لغرفة التعليقات الخاصة بالصورة، نقوم بإخراجه من الغرفة
+socket.on('leavePhotoRoom', (photoId) => {
+  console.log('left room:photo-'+photoId);
+  socket.leave(`photo-${photoId}`);
+});
 });
 
 // مسار اختبار سريع

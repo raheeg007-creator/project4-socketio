@@ -27,7 +27,10 @@ export default function PhotoDetail() {
 // عند تحميل المكون، نقوم بإنشاء اتصال Socket.IO والانضمام إلى غرفة التعليقات الخاصة بالصورة
 useEffect(() => {
   const socket = io('http://localhost:5000');
-  socket.emit('joinPhoto', id);
+  socket.on('connect', () => console.log('Connected to Socket.IO server'));
+  socket.on('connect',()=> console.log('Connected to Socket.IO server'));
+  socket.on('connect_error', (err) => console.error('Socket.IO connection error:', err.message));
+  socket.emit('joinPhotoRoom', id);
 
   socket.on('newComment', (comment) => {
     setComments(prev =>
@@ -36,7 +39,7 @@ useEffect(() => {
   });
 
   return () => {
-    socket.emit('leavePhoto', id);
+    socket.emit('leavePhotoRoom', id);
     socket.disconnect();
   };
 }, [id]);  
@@ -52,6 +55,7 @@ useEffect(() => {
         { headers: { 'x-user-id': user._id } }
       );
       // تحديث قائمة التعليقات بإضافة التعليق الجديد في البداية
+      setComments([res.data, ...comments]); 
       setNewComment(''); 
       // إعادة جلب التعليقات من الخادم للتأكد من التحديث
     } catch (err) {
